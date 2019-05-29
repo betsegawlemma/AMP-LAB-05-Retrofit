@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Retrofit Example</string>
+
+    <string name="course_title">Course Title</string>
+    <string name="course_code">Course Code</string>
+    <string name="course_ects">Course ECTS</string>
+    <string name="course_description">Course Description</string>
+    <string name="add_button">Add</string>
+    <string name="update_button">Update</string>
+    <string name="delete_button">Delete</string>
+    <string name="search_button">Search</string>
+    <string name="search_hint">Search by course code</string>
+</resources>
