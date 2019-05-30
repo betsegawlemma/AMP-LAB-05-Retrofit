@@ -14,6 +14,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
@@ -46,9 +47,11 @@ class MainActivity : AppCompatActivity() {
 
         addButton.setOnClickListener {
             val course = readFields()
-            GlobalScope.launch {
+            GlobalScope.launch(Dispatchers.IO) {
                 if(connected()) {
-                    val response: Response<Void> = CourseApiService.getInstance().insertCourseAsync(course).await()
+                    val response: Response<Void> =
+                        CourseApiService.getInstance().
+                            insertCourseAsync(course).await()
                     Log.d("MainActivity", response.message())
                 }
             }
@@ -58,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         updateButton.setOnClickListener {
             val id: Long = searchEditText.text.toString().toLong()
             val course = readFields()
-            GlobalScope.launch {
+            GlobalScope.launch(Dispatchers.IO) {
                 if(connected()) {
                     val response: Response<Void> = CourseApiService.getInstance().updateCourseAsnc(id, course).await()
                     Log.d("MainActivity", response.message())
@@ -69,7 +72,7 @@ class MainActivity : AppCompatActivity() {
 
         deleteButton.setOnClickListener {
             val id: Long = searchEditText.text.toString().toLong()
-            GlobalScope.launch {
+            GlobalScope.launch(Dispatchers.IO) {
                 if(connected()) {
                     val response: Response<Void> = CourseApiService.getInstance().deleteCourseAsync(id).await()
                     Log.d("MainActivity", response.message())
@@ -79,13 +82,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         searchButton.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
-                val id: Long = searchEditText.text.toString().toLong()
+            val id: Long = searchEditText.text.toString().toLong()
+            GlobalScope.launch(Dispatchers.IO) {
                 if(connected()) {
-                    val response: Response<Course> = CourseApiService.getInstance().findByIdAsync(id).await()
+                    val response: Response<Course> =
+                        CourseApiService.getInstance().findByIdAsync(id).await()
                     val course = response.body()
                     if (course != null) {
-                        updateFields(course)
+                        withContext(Dispatchers.Main){
+                            updateFields(course)
+                        }
                     }
                 }
             }
@@ -119,7 +125,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun connected():Boolean {
 
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
         val networkInfo: NetworkInfo? = connectivityManager.activeNetworkInfo
 
         return networkInfo != null && networkInfo.isConnected
