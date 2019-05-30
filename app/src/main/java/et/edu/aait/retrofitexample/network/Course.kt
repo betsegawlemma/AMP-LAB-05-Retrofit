@@ -1,4 +1,4 @@
-package et.edu.aait.retrofitexample
+package et.edu.aait.retrofitexample.network
 
 data class Course (
     val id: Long,

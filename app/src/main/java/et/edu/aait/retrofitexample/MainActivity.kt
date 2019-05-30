@@ -8,6 +8,8 @@ import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import et.edu.aait.retrofitexample.network.Course
+import et.edu.aait.retrofitexample.network.CourseApiService
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -31,9 +33,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val networkInfo: NetworkInfo = connectivityManager.activeNetworkInfo
-
         addButton = add_button
         deleteButton = delete_button
         updateButton = update_button
@@ -48,8 +47,10 @@ class MainActivity : AppCompatActivity() {
         addButton.setOnClickListener {
             val course = readFields()
             GlobalScope.launch {
-                val response:Response<Void> = CourseWebService.getInstance().insertCourseAsync(course).await()
-                Log.d("MainActivity", response.message())
+                if(connected()) {
+                    val response: Response<Void> = CourseApiService.getInstance().insertCourseAsync(course).await()
+                    Log.d("MainActivity", response.message())
+                }
             }
             clearFields()
         }
@@ -58,8 +59,10 @@ class MainActivity : AppCompatActivity() {
             val id: Long = searchEditText.text.toString().toLong()
             val course = readFields()
             GlobalScope.launch {
-                val response: Response<Void> = CourseWebService.getInstance().updateCourseAsnc(id, course).await()
-                Log.d("MainActivity", response.message())
+                if(connected()) {
+                    val response: Response<Void> = CourseApiService.getInstance().updateCourseAsnc(id, course).await()
+                    Log.d("MainActivity", response.message())
+                }
             }
             clearFields()
         }
@@ -67,8 +70,10 @@ class MainActivity : AppCompatActivity() {
         deleteButton.setOnClickListener {
             val id: Long = searchEditText.text.toString().toLong()
             GlobalScope.launch {
-                val response:Response<Void> =  CourseWebService.getInstance().deleteCourseAsync(id).await()
-                Log.d("MainActivity", response.message())
+                if(connected()) {
+                    val response: Response<Void> = CourseApiService.getInstance().deleteCourseAsync(id).await()
+                    Log.d("MainActivity", response.message())
+                }
             }
             clearFields()
         }
@@ -76,10 +81,10 @@ class MainActivity : AppCompatActivity() {
         searchButton.setOnClickListener {
             GlobalScope.launch(Dispatchers.Main) {
                 val id: Long = searchEditText.text.toString().toLong()
-                if(networkInfo.isConnected){
-                    val response: Response<Course> = CourseWebService.getInstance().findByIdAsync(id).await()
+                if(connected()) {
+                    val response: Response<Course> = CourseApiService.getInstance().findByIdAsync(id).await()
                     val course = response.body()
-                    if(course!=null){
+                    if (course != null) {
                         updateFields(course)
                     }
                 }
@@ -96,7 +101,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun readFields() = Course(0,
+    private fun readFields() = Course(
+        0,
         codeEditText.text.toString(),
         titleEditText.text.toString(),
         ectsEditText.text.toString().toInt(),
@@ -109,5 +115,14 @@ class MainActivity : AppCompatActivity() {
         titleEditText.setText("")
         ectsEditText.setText("")
         descriptionEditText.setText("")
+    }
+
+    private fun connected():Boolean {
+
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkInfo: NetworkInfo? = connectivityManager.activeNetworkInfo
+
+        return networkInfo != null && networkInfo.isConnected
+
     }
 }
